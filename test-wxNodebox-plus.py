@@ -95,7 +95,7 @@ class TestPanel(wx.Panel):
         ctx.stroke(0.2)
         ctx.autoclosepath(False)    
         path = ctx.findpath(points)
-        ctx.drawpath(path)   
+        ctx.drawpath(path)
         
         ctx.nofill()
         ctx.stroke(1,0,0)
