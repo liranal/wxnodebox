@@ -7,6 +7,8 @@ import cairo
 
 from BezierPath import *
 from Point import *
+from Transform import *
+
 
 class Context():
     '''
@@ -45,6 +47,8 @@ class Context():
         self._lineWidth = 1
         
         self._autoclosepath = True
+        self._transform = Transform()
+        self._fontsize = 10
         #self._color = Color()
     
     def size(self, width, height):
@@ -83,14 +87,31 @@ class Context():
         '''
         # straight corners
         if roundness == 0.0:
-            self.cairoContext.rectangle( x, y, width, height)
+            self.cairoContext.save ()
+            if self._transform.mode == CENTER:
+                self.cairoContext.translate( x + width/2., y + height/2.)
+                self.cairoContext.rotate( - self._transform.radians)
+                x0 = -width/2.
+                y0 = -height/2.
+            else:
+                x0 = x
+                y0 = y
+            self.cairoContext.rectangle( x0, y0, width, height)
             self.cairoContext.set_line_width( self._lineWidth)
             if self._fillState == 1:
                 self.cairoContext.fill()
+            self.cairoContext.restore ()
         else:
+            self.cairoContext.save ()
+            if self._transform.mode == CENTER:
+                self.cairoContext.translate( x + width/2., y + height/2.)
+                self.cairoContext.rotate( - self._transform.radians)
+                x0 = -width/2.
+                y0 = -height/2.
+            else:
+                x0 = x
+                y0 = y
             radius = roundness * 50
-            x0 = x
-            y0 = y
             x1=x0+width
             y1=y0+height
             #if (!rect_width || !rect_height)
@@ -132,6 +153,7 @@ class Context():
             self.cairoContext.set_line_width( self._lineWidth)
             if self._fillState == 1:
                 self.cairoContext.fill_preserve ()
+            self.cairoContext.restore ()
         
         if draw == True:
             self.cairoContext.stroke()
@@ -184,23 +206,20 @@ class Context():
         else:
             self._colormode = self.RGB
       
-    # transformation
-    def rotate( self, radians):
-        self.cairoContext.rotate( radians)
-
-    def translate( self, x, y):
-        self.cairoContext.translate( x, y)
-        
-    # 
-    def fill( self, gray, a=1):
+    #def fill( self, gray, a=1):
+    #    '''Sets a fill color, applying it to new paths.'''
+    #    self._fillState = 1
+    #    self.cairoContext.set_source_rgba( gray, gray, gray, a)
+    #def fill( self, gray, a=1):
+    #def fill( self, color0, color1, color2, a=1):
+    def fill( self, color0=-1, color1=1, color2=-1, a=1):
         '''Sets a fill color, applying it to new paths.'''
         self._fillState = 1
-        self.cairoContext.set_source_rgba( gray, gray, gray, a)
-
-    def fill( self, color0, color1, color2, a=1):
-        '''Sets a fill color, applying it to new paths.'''
-        self._fillState = 1
-        if self._colormode == self.RGB:
+        if color2 == -1:
+            # def fill( self, gray, a=1):
+            gray = color0
+            self.cairoContext.set_source_rgba( gray, gray, gray, color1)
+        elif self._colormode == self.RGB:
             self.cairoContext.set_source_rgba( color0, color1, color2, a)
         elif self._colormode == self.HSB:
             rgb = util.hsl_to_rgb(color0, color1, color2)
@@ -495,6 +514,7 @@ class Context():
         self.cairoContext.restore()
         
     #### Transform and utility
+    # ----- Transform and utility -----
 
     # TODO
     def beginclip(self,x,y,w,h):
@@ -505,7 +525,209 @@ class Context():
     # TODO
     def endclip(self):
         self.restore()
+        
+    def translate(self, x, y):
+        self._transform.translate( x, y)
+        
+    def rotate(self, degrees=0, radians=0):
+        self._transform.rotate( degrees, radians)
+
+    # TODO - to check
+    def scale(self, x=1, y=None):
+        if x == 0 or y == 0:
+            print "Warning: Invalid matrix provided to scale(), values of 0 not allowed. Ignoring."
+            pass
+        elif y is None:
+            self.context.scale(x,x)
+        else:
+            self.context.scale(x,y)
+        
+    def reset(self):
+        #self.context.identity_matrix()
+        self._transform.reset()
+
+    # TODO - doesn't work
+    def skew(self, x=1, y=None):
+        if x in (-1,1):
+            print "Warning: Invalid value provided to scale(), values of -1, or -1 not allowed. Setting value to 0."
+            x = 0
+        if y in (-1,1):
+            print "Warning: Invalid value provided to scale(), values of -1, or -1 not allowed. Setting value to 0."
+            y = 0
+        elif y is None:
+            y = x
+            mtrx = cairo.Matrix (xx=1.0, yx=y, xy=x, yy=1.0, x0=0.0, y0=0.0)
+            self.cairoContext.transform(mtrx)
+        else:
+            mtrx = cairo.Matrix (xx=1.0, yx=y, xy=x, yy=1.0, x0=0.0, y0=0.0)
+            self.cairoContext.transform(mtrx)
     
+    # TODO - to check
+    def push(self):
+        #self.push_group()
+        self.cairoContext.save()
+
+    # TODO - to check
+    def pop(self):
+        #self.pop_group()
+        self.cairoContext.restore()
+            
+    # ----- UTILITY -----
+    
+    # TODO - to check
+    def random(self,v1=None, v2=None):
+        # ipsis verbis from Nodebox
+        import random
+        if v1 is not None and v2 is None:
+            if isinstance(v1, float):
+                return random.random() * v1
+            else:
+                return int(random.random() * v1)
+        elif v1 != None and v2 != None:
+            if isinstance(v1, float) or isinstance(v2, float):
+                start = min(v1, v2)
+                end = max(v1, v2)
+                return start + random.random() * (end-start)
+            else:
+                start = min(v1, v2)
+                end = max(v1, v2) + 1
+                return int(start + random.random() * (end-start))
+        else: # No values means 0.0 -> 1.0
+            return random.random()
+
+    from random import choice
+    
+    # TODO - to check
+    def grid(self, cols, rows, colSize=1, rowSize=1, shuffled = False):
+        """Returns an iterator that contains coordinate tuples.
+        The grid can be used to quickly create grid-like structures.
+        A common way to use them is:
+            for x, y in grid(10,10,12,12):
+                rect(x,y, 10,10)
+        """
+        # Taken ipsis verbis from Nodebox
+
+        rowRange = range(int(rows))
+        colRange = range(int(cols))
+        if (shuffled):
+            shuffle(rowRange)
+            shuffle(colRange)
+        for y in rowRange:
+            for x in colRange:
+                yield (x*colSize,y*rowSize)
+        
+    # ----- TEXT -----
+    
+    def textmetrics(self, txt, width=None):
+        '''Returns the width and height of a string of text as a tuple
+        (according to current font settings).
+        '''
+        # for now only returns width and height (as per Nodebox behaviour)
+        # but maybe we could use the other data from cairo
+        x_bearing, y_bearing, textwidth, textheight, x_advance, y_advance = self.cairoContext.text_extents(txt)
+        return textwidth, textheight
+    
+    def textwidth(self, txt, width=None):
+        '''Returns the width of a string of text according to the current
+        font settings.
+        '''
+        return textmetrics(txt)[0]
+
+    def textheight(self, txt, width=None):
+        '''Returns the height of a string of text according to the current
+        font settings.
+        '''
+        return textmetrics(txt)[1]
+    
+    def lineheight(self, height=None):
+        '''
+        NOT IMPLEMENTED
+        '''
+        # default: 1.2
+        # sets leading
+        raise NotImplementedError("lineheight() isn't implemented yet")
+
+    def align(self, align="LEFT"):
+        '''
+        NOT IMPLEMENTED
+        '''
+        # sets alignment to LEFT, RIGHT, CENTER or JUSTIFY
+        raise NotImplementedError("align() isn't implemented in Shoebot yet")
+    
+    def font(self, fontpath=None, fontsize=None):
+        '''Set the font to be used with new text instances.
+
+        Accepts TrueType and OpenType files. Depends on FreeType being
+        installed.'''
+        if fontpath is not None:
+            face = util.create_cairo_font_face_for_file(fontpath, 0)
+            self.cairoContext.set_font_face(face)
+        else:
+            self.cairoContext.get_font_face()
+        if fontsize is not None:
+            self.fontsize(fontsize)
+    
+    def fontsize(self, fontsize=None):
+        if fontsize is not None:
+            self._fontsize = fontsize
+            self.cairoContext.set_font_size( fontsize)
+        else:
+            #return self.cairoContext.get_font_size()
+            return self._fontsize
+
+    def text(self, txt, x, y, width=None, height=1000000, outline=False):
+        '''
+        Draws a string of text according to current font settings.
+        '''
+        # TODO: Check for malformed requests (x,y,txt is a common mistake)
+        self.cairoContext.save()
+        if width is not None:
+            pass
+        if outline is True:
+            self.textpath(txt, x, y, width, height)
+        else:
+            ##original
+            #self.cairoContext.move_to(x,y+1.)
+            #self.cairoContext.show_text(txt)
+
+            ##with transformation
+            length = len(txt)
+            self.cairoContext.save()
+            self.cairoContext.translate(x+self._fontsize*length/4.,y-self._fontsize/4.)
+            #ctx.cairoContext.move_to(100+size*3/4.,100-size/4.)
+            self.cairoContext.rotate( - self._transform.radians)
+            self.cairoContext.translate(0-self._fontsize*3/4., 1.+self._fontsize/4.)
+            self.cairoContext.show_text( txt)
+            
+            #self.cairoContext.translate(0-14/2.,1.+14/2.)
+            #self.cairoContext.rotate( - self._transform.radians)
+            #self.cairoContext.translate(14/2.+x,-14/2.+y)
+            #self.cairoContext.translate( x , y)
+            #self.cairoContext.rotate( - self._transform.radians)
+            #size = 5. #10.
+            #self.cairoContext.translate( x + size/2., y + size/2.)
+            #self.cairoContext.rotate( - self._transform.radians)
+            #self.cairoContext.translate( - size/2., - size/2.)
+            #self.cairoContext.show_text(txt)
+            self.cairoContext.set_line_width( self._lineWidth)
+            if self._fillState == 1:
+                self.cairoContext.fill()
+            self.cairoContext.stroke()
+                
+        self.cairoContext.restore()
+        
+    # TODO
+    def textpath(self, txt, x, y, width=None, height=1000000, draw=True):
+        '''
+        Draws an outlined path of the input text
+        '''
+        ## FIXME: This should be handled by BezierPath
+        self.save()
+        self.context.move_to(x,y)
+        self.context.text_path(txt)
+        self.restore()
+        #return self._path
+        
     # ----- IMAGE -----
 
     ## TODO Lit uniquement les fichiers png
