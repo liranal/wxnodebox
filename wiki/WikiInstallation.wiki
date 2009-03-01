@@ -17,21 +17,21 @@ Go to http://www.wxpython.org/download.php#binaries . Then get and install *wxPy
 
 3) install PyCairo
 
-Go to http://wxpython.org/cairo/ . Then get and install *pycairo-1.6.4.win32-py2.5.exe*
+Go to http://wxpython.org/cairo/ . Then get and install *pycairo-1.6.4.win32-py2.5.exe*.
 
 4) Actualize the PATH
 
-At the end of the PATH, add *;C:\Program Files\Python25*
+Add *;C:\Program Files\Python25* at the end of the PATH.
 
 5) Get libPNG and Zlib Dll
 
-Go to http://wxpython.org/cairo/ . Then get *libpng-1.2.29.zip* and *zlib123-dll.zip*
-And Copy the following DLL on your Python directory *C:\Program Files\Python25\Lib\site-packages\cairo*
+Go to http://wxpython.org/cairo/ . Then get *libpng-1.2.29.zip* and *zlib123-dll.zip*.
+And copy the following DLL on your Python directory *C:\Program Files\Python25\Lib\site-packages\cairo*.
 
 6) Get cairo Dll
 
 Go to http://wxpython.org/cairo/ . Then get *cairo-1.6.4-2.zip*.
-And Copy this DLL on your Python directory *C:\Program Files\Python25\DLLs*
+And copy this DLL on your Python directory *C:\Program Files\Python25\DLLs*.
 
 
 
