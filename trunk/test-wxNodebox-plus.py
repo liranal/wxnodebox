@@ -12,7 +12,7 @@ except ImportError:
     haveCairo = False
 
 #import NodeBox
-from NodeBox import *
+from WxNodeBox import *
     
 def run():
     fill(0.2)
@@ -101,7 +101,7 @@ class TestPanel(wx.Panel):
         ctx.stroke(1,0,0)
         ctx.strokewidth(1)
         ctx.rect(10,340,100,100,1)
-        ctx.image("nodeboxicon.png", 10, 340, 100, 100, 0)
+        ctx.image("ressources_test/nodeboxicon.png", 10, 340, 100, 100, 0)
         #ctx.image("nodeboxicon.png", 250, 350, 100, 100)
         #ctx = wx.lib.wxcairo.ContextFromDC(dc)
         #node = NodeBox.Box()

@@ -12,7 +12,7 @@ except ImportError:
     haveCairo = False
 
 #import NodeBox
-from NodeBox import *
+from WxNodeBox import *
     
 def run():
     fill(0.2)
