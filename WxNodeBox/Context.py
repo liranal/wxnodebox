@@ -693,10 +693,13 @@ class Context():
             ##with transformation
             length = len(txt)
             self.cairoContext.save()
-            self.cairoContext.translate(x+self._fontsize*length/4.,y-self._fontsize/4.)
+            xcoeff = 4.
+            # ce coeff reste à analyser
+            ycoeff = 2.
+            self.cairoContext.translate(x+self._fontsize*length/xcoeff,y-self._fontsize/ycoeff)
             #ctx.cairoContext.move_to(100+size*3/4.,100-size/4.)
             self.cairoContext.rotate( - self._transform.radians)
-            self.cairoContext.translate(0-self._fontsize*3/4., 1.+self._fontsize/4.)
+            self.cairoContext.translate(0-self._fontsize*length/xcoeff, 1.+self._fontsize/ycoeff)
             self.cairoContext.show_text( txt)
             
             #self.cairoContext.translate(0-14/2.,1.+14/2.)
