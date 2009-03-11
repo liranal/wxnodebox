@@ -32,6 +32,7 @@ import cairo
 import util
 from BezierPath import *
 from Context import *
+from WxBase import *
 
 VERBOSE = False
 DEBUG = False
