@@ -241,7 +241,123 @@ def minus_list_element( index, elementA, elementB):
 		return elementB
 	
 	
-	
+class Raymapping2:
+	def calculate_collision( moving_element, direction_vect, world):
+		# initialize direction
+		isVertical = True
+		isHorizontal = True
+		if direction_vect.x == 0.:
+			isHorizontal = False
+			x_factor = 1.
+		elif direction_vect.x > 0.:
+			isRight = True
+			x_factor = 1.
+		else:
+			isLeft = True
+			x_factor = -1.
+		if direction_vect.y == 0.:
+			isVertical = False
+			y_factor = 1.
+		elif direction_vect.y > 0.:
+			isUp = True
+			y_factor = 1.
+		else:
+			isDown = True
+			y_factor = -1.
+		# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		g_to_point = Vector2( moving_element.position.x + moving_element.size*x_factor, \
+							  moving_element.position.y + moving_element.size*y_factor)
+		point = moving_element.position + g_to_point # Point2
+		#
+		# init
+		areaX = int(point.x)
+		areaY = int(point.y)
+		area_collisions_list = []
+		area_next_collisions_list = []
+		
+		while len(area_collisions_list) == 0:
+			# elements in area > we list all collisions
+			for element in world.area( areaX, areaY).linked_elements:
+				isCollision = False
+				# check and find collision of this area in area_next_collisions_list
+				for collision in area_next_collisions_list:
+					#area_next_collisions_list.append( (element, collision_areaX, collision_areaY, rayX, rayY, dt) )
+					if collision[0] == element and collision[1] == areaX and collision[2] == areaY:
+						# add this collision > area_collisions_list.append( (rayX, rayY, dt) )
+						area_collisions_list.append( (collision[3], collision[4], collision[5], element) )
+						area_next_collisions_list.remove( collision)
+						isCollision = True
+						continue
+				if isCollision == True:
+					continue
+				#element.size, element.position, element.border
+				# dt between 0. and 1.
+				# rayX = point.x + dt * direction_vect.x
+				# rayY = point.y + dt * direction_vect.y
+				#element.position.x
+				# in collision rayX = element.position.x-element.size = element.border[X][0]
+				# in collision rayY = element.position.y-element.size = element.border[Y][0]
+				# >> dt = (element.border[X][0] - point.x) / direction_vect.x
+				# >> dt = (element.border[Y][0] - point.y) / direction_vect.y
+				dt = (element.border[X][0] - point.x) / direction_vect.x
+				isNearX = False
+				isCollisionX = False
+				if dt >= 0 and dt < 1:
+					isNearX = True
+					rayX = element.border[X][0]
+					rayY = point.y + dt * direction_vect.y
+					if rayY >= element.border[Y][0] and \
+					   rayY <= element.border[Y][1]:
+						isCollisionX = True
+				isNearY = False
+				isCollisionY = False
+				if isCollisionX == False:
+					dt = (element.border[Y][0] - point.y) / direction_vect.y
+					if dt >= 0 and dt < 1:
+						isNearY = True
+						rayX = point.x + dt * direction_vect.x
+						rayY = element.border[Y][0]
+						if rayX >= element.border[X][0] and \
+						   rayX <= element.border[X][1]:
+							isCollisionY = True
+				if isCollisionX == True or isCollisionY == True:
+					# there is collision in (rayX,rayY) point with (dt) time
+					# but is it the right area ?
+					collision_areaX = int(rayX)
+					collision_areaY = int(rayY)
+					if collision_areaX == areaX and collision_areaY == areaY:
+						area_collisions_list.append( (rayX, rayY, dt, element) )
+					else:
+						area_next_collisions_list.append( (element, collision_areaX, collision_areaY, rayX, rayY, dt) )
+			# end of for element in world.area( areaX, areaY).linked_elements:
+			
+			if len(area_collisions_list) == 0:
+				# no collision > go to the next area
+				# go to next area
+				next_area = self.calculate_next_area( point, direction_vect, world)
+				if dt > 0 and dt<= 1:
+					#next_area = ( next_area[0], next_area[1])
+					areaX = next_area[0]
+					areaY = next_area[1]
+				else:
+					break
+		# end of the while len(area_collisions_list) == 0:
+		if len(area_collisions_list) != 0:
+			# if there is collision, we choose the minus dt one.
+			min_collision = reduce(lambda x,y: minus_list_element( 2, x, y), area_collisions_list)
+		else:
+			min_collision = None
+		return min_collision
+			
+	def calculate_next_area( point, direction_vect, world):
+		# go to next area
+		dtX = (area.border[X][0] - point.x) / direction_vect.x
+		dtY = (area.border[Y][0] - point.y) / direction_vect.y
+		dt = min(dtX, dtY)
+		rayX = point.x + dt * direction_vect.x
+		rayY = point.y + dt * direction_vect.y
+		next_area = (int(rayX), int(rayY))
+		return (int(rayX), int(rayY), dt)
 	
 	
 	
