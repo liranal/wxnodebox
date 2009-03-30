@@ -23,6 +23,7 @@ class MovingElement(Element):
         Element.__init(self)
         self.position = Vector2(0.,0.)
         self.direction = 0.
+        self.size = 1.
         self.state = 1
         self.speed = 0.
         
@@ -31,6 +32,7 @@ class StaticElement(Element):
         Element.__init(self)
         self.position = Vector2(0.,0.)
         self.direction = 0.
+        self.size = 1.
         self.state = 1
 
 class Actor(MovingElement):
