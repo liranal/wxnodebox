@@ -1,10 +1,11 @@
 #!/usr/bin/python
 # -*- coding: iso-8859-1 -*- 
 
-class Wall(Element):
-	def __init__(self):
-		Element.__init__(self)
-		
+class Wall(StaticElement):
+	def __init__(self, index_x, index_y):
+		StaticElement.__init__(self)
+		self.position = Point2( index_x+0.5, index_y+0.5)
+		self.size = 0.5
 
 class Area(Element):
 	def __init__(self):

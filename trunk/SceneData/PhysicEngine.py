@@ -8,37 +8,20 @@ X = 0
 Y = 1
 
 
-def distance( elementA, elementB):
-	vector = elementA.position - elementB.position
-	return abs(vector)
-	#dist = (elementA.position(X) - elementB.position(X))**2 \
-	#	 + (elementA.position(Y) - elementB.position(Y))**2
-	#dist = math.sqrt(dist)
-	#return dist
-
-def isCollision( my_object, objects_list):
-	for element in objects_list:
-		# calcul distance between two elements
-		dist = distance(my_object, element);
-		if dist < my_object.size + element.size:
-			return True
-	return False
-
-
 class PhysicEngine:
 	def __init__(self):
 		self.world = None
-		#self.objects_list = []
 		self.actor = None
+		#self.objects_list = []
 		#self.creatures_list = []
-	
+
 	def initialize(self, my_world, my_actor):
 		self.world = my_world
 		self.actor = my_actor
-		
-	def add_map(self, my_map):
-		self.world = my_map
-		
+
+	#def add_map(self, my_map):
+	#	self.world = my_map
+
 	def turn(self):
 		delta_time = 0.5
 		# move actor
@@ -47,10 +30,12 @@ class PhysicEngine:
 		creatures_list = self.world.creatures_list
 		for element in creatures_list:
 			self.move_creature( element, delta_time)
-		# Actifitial Intelligence
+		# Actificial Intelligence
+		for element in creatures_list:
+			self.update_creature_ia( element, world)
 		# event
 		## TO DO - ?? which ??
-		
+
 	def move_actor(self, actor, delta_time):
 		old_position = actor.position
 		# calculate direction vector
@@ -74,23 +59,33 @@ class PhysicEngine:
 		algo.update_element_position( element, direction_vect, self.world)
 		# add actor to new area
 		self.attach_element_in_world( self.element)
-		
+
 	def calculate_direction_vector(self, element, delta_time):
 		"""Calcule le vecteur de mouvement de l'élément
 		"""
 		assert isinstance( element, MovingElement)
 		return Vector2( element.speed * delta_time, 0.).rotate( element.angle)
-		
-			
-	def calculate_new_position(self, element, delta_time):
-		initial_position = element.position()
-		# angle in radian : angle=0 => X direction . angle=pi/2 => Y direction
-		angle = element.direction()
-		speed = element.speed()
-		new_position = element.position \
-					 + Vector2( speed * delta_time, 0.).rotate( angle)
-		return new_position
-	
+
+	def update_creature_ia(self, element, world):
+		"""Met à jour la direction de déplacement
+		"""
+		assert isinstance( element, MovingElement)
+		# calculate the new angle
+		direction = world.actor - element.position
+		if direction.x != 0.:
+			element.angle = math.atan( direction.y / direction.x)
+		else:
+			element.angle = math.atan2( direction.x / direction.y)
+
+	#def calculate_new_position(self, element, delta_time):
+		#initial_position = element.position()
+		## angle in radian : angle=0 => X direction . angle=pi/2 => Y direction
+		#angle = element.direction()
+		#speed = element.speed()
+		#new_position = element.position \
+						#+ Vector2( speed * delta_time, 0.).rotate( angle)
+		#return new_position
+
 	def attach_element_in_world( actor):
 		position = actor.position
 		size = actor.size
@@ -103,7 +98,7 @@ class PhysicEngine:
 		for posy in range( areaYb, areaYe):
 			for posx in range( areaXb, areaXe):
 				self.world.area(posx, posy).add_linked_element(actor)
-	
+
 	def detach_element_in_world( element):
 		position = element.position
 		size = element.size
@@ -117,57 +112,17 @@ class PhysicEngine:
 			for posx in range( areaXb, areaXe):
 				self.world.area(posx, posy).remove_linked_element(element)
 
+
 				
-class SimpleAlgoRaymapping:
-	## TO DO the more simple way
-	def update_element_position(self, moving_element, direction_vect, world):
-		"""
-		"""
-		old_position = actor.position
-		new_position = self.calculate_new_position( actor, delta_time)
-		# check collision with elements
-		# find direction : left or right (x) then up or down (y)
-		isRight = (new_position.x > old_position.x)
-		isHorizontal = (new_position.x == old_position.x)
-		isUp = (new_position.y < old_position.y)
-		isVertical = (new_position.y == old_position.y)
-		box_field = []
-		box_field.append( (old_position.x-size, old_position.y-size))
-		box_field.append( (old_position.x+size, old_position.y+size))
-		box_field.append( (new_position.x-size, new_position.y-size))
-		box_field.append( (new_position.x+size, new_position.y+size))
-		min_box = reduce(lambda x,y: ( min(x[0],y[0]), min(x[1],y[1])), box_field)
-		max_box = reduce(lambda x,y: ( max(x[0],y[0]), max(x[1],y[1])), box_field)
-		
-		if isUp == True:
-			# action
-			pass
-		elif isHorizontal == True:
-			# action
-			pass
-		else:
-			# action
-			pass
-		
-		# check collision with map
-		# check collision with objects
-		# check collision with creatures
-		# if ok then update position
-		if isCollision == False:
-			self.actor.update_position( new_position)
-		else:
-			self.actor.keep_position()
-
-
 ## TODO
 ## il faut réfléchir à remplacer le isHorizontal et isVertical par une valeur faible mais non null de direction_vect
-	
+
 class Raymapping:
 	""" algorithme de raymapping pour déterminer les collisions entre éléments.
 	Cette algo retourne
 	>> main procedure : def calculate_collision()
 	"""
-	
+
 	def define_areas_box(self, element):
 		"""Calcule les coordonnées des deux zones extrêmes contenant l'élément (la zone min et la zone max)
 		element = Element()
@@ -205,7 +160,7 @@ class Raymapping:
 		elif direction_vect.y > 0.:
 			isUp = True
 		return (isRight, isUp, isHorizontal, isVertical)
-		
+
 	def calculate_next_area(self, areas_box, direction, corner_point, direction_vect, world):
 		"""Calcule les coordonnées de la prochaine zone à être intersectée pour le point d'angle
 		areas_box = ( (indexXmin, indexYmin), (indexXmax, indexYmax)) >> def define_areas_box()
@@ -239,7 +194,7 @@ class Raymapping:
 		rayY = corner_point.y + dt * direction_vect.y
 		next_area = (int(rayX), int(rayY))
 		return (int(rayX), int(rayY), dt)
-		
+
 	def update_element_position(self, moving_element, direction_vect, world):
 		'''MAIN PROCEDURE : Recherche si elle existe la collision entre un élément mouvant et son environnement
 		moving_element = MovingElement()
@@ -262,9 +217,9 @@ class Raymapping:
 		dt0 = 0
 		# find corner
 		g_to_corner = Vector2( moving_element.position.x + moving_element.size*x_factor, \
-							  moving_element.position.y + moving_element.size*y_factor)
+							   moving_element.position.y + moving_element.size*y_factor)
 		element_position = Point2( moving_element.position.x, moving_element.position.x)
-			
+
 		area_next_collisions_list = []
 		#########################################################
 		while dt0 < 1.:
@@ -273,16 +228,16 @@ class Raymapping:
 			# areas borders
 			areas_bounds = self.define_area_box( moving_element, element_position)
 			areas_to_check = self.select_areas_to_check( areas_bounds, direction)
-			
+
 			# prepare futur next area (and get max dt1)
 			next_area_collision = self.calculate_next_area( areas_bounds, direction, corner_point, direction_vect, dt0, world)
 			dt1 = max(next_area_collision[2], 1.)
-		
+
 			# get collision in this area group
 			collisions_list = self.calculate_moving_element_collisions \
 							( corner_point, direction_vect, (dt0, dt1), \
 							  area_to_test_list, area_next_collisions_list)
-		
+
 			# if no collision, go to the next position
 			if len(area_group_collision) == 0:
 				# move_element to the next area
@@ -298,7 +253,7 @@ class Raymapping:
 		# stop of the moving element
 		# update element position
 		moving_element.position = element_position
-			
+
 	def calculate_moving_element_collisions(self, corner_point, direction_vect, delta_time, \
 											areas_to_check, temp_collisions):
 		"""Calcule les collisions avec l'élément mobile dans les zones listées uniquement.
@@ -331,7 +286,7 @@ class Raymapping:
 				temp_collisions += area_collisions
 			collisions_list += area_collisions
 		return collisions_list
-		
+
 	def calculate_area_collisions(self, area, direction, corner_point, direction_vect):
 		"""Calcule les collisions dans une zone
 		area = Area()
@@ -352,7 +307,7 @@ class Raymapping:
 				rayY = corner_point.y + dt * direction_vect.y
 				if rayY >= element.border[0][Y] and \
 				   rayY <= element.border[1][Y]:
-						isCollisionX = True
+					isCollisionX = True
 			isNearY = False
 			isCollisionY = False
 			if isCollisionX == False:
@@ -377,7 +332,7 @@ class Raymapping:
 				#	temp_collisions.append( collision )
 			# end of for element in world.area( areaX, areaY).linked_elements:
 		return area_collisions
-		
+
 
 class Collision:
 	def __init__(self):
@@ -387,14 +342,69 @@ class Collision:
 		self.index_y = 0
 		self.dt = 0.
 		self.element = None
-	
+
 	def __init__(self, x, y, index_x, index_y, dt, element):
 		self.x, self.y, self.index_x, self.index_y, self.dt, self.element = \
 			x, y, index_x, index_y, dt, element
+
+
+		
+#class SimpleAlgoRaymapping:
+	### TO DO the more simple way
+	#def update_element_position(self, moving_element, direction_vect, world):
+		#"""
+		#"""
+		#old_position = actor.position
+		#new_position = self.calculate_new_position( actor, delta_time)
+		## check collision with elements
+		## find direction : left or right (x) then up or down (y)
+		#isRight = (new_position.x > old_position.x)
+		#isHorizontal = (new_position.x == old_position.x)
+		#isUp = (new_position.y < old_position.y)
+		#isVertical = (new_position.y == old_position.y)
+		#box_field = []
+		#box_field.append( (old_position.x-size, old_position.y-size))
+		#box_field.append( (old_position.x+size, old_position.y+size))
+		#box_field.append( (new_position.x-size, new_position.y-size))
+		#box_field.append( (new_position.x+size, new_position.y+size))
+		#min_box = reduce(lambda x,y: ( min(x[0],y[0]), min(x[1],y[1])), box_field)
+		#max_box = reduce(lambda x,y: ( max(x[0],y[0]), max(x[1],y[1])), box_field)
+
+		#if isUp == True:
+			## action
+			#pass
+		#elif isHorizontal == True:
+			## action
+			#pass
+		#else:
+			## action
+			#pass
+
+		## check collision with map
+		## check collision with objects
+		## check collision with creatures
+		## if ok then update position
+		#if isCollision == False:
+			#self.actor.update_position( new_position)
+		#else:
+			#self.actor.keep_position()
+
 		
 
-	
-	
-	
-	
-	
+#def distance( elementA, elementB):
+	#vector = elementA.position - elementB.position
+	#return abs(vector)
+	##dist = (elementA.position(X) - elementB.position(X))**2 \
+	##	 + (elementA.position(Y) - elementB.position(Y))**2
+	##dist = math.sqrt(dist)
+	##return dist
+
+#def isCollision( my_object, objects_list):
+	#for element in objects_list:
+		## calcul distance between two elements
+		#dist = distance(my_object, element);
+		#if dist < my_object.size + element.size:
+			#return True
+	#return False
+
+
