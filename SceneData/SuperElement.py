@@ -4,6 +4,26 @@
 # story of Doom : http://doom.wikia.com/wiki/Entryway
 # http://diablo2.judgehype.com/index.php
 
+from euclid import *
+from Element import *
+
+class MovingElement(Element):
+    def __init__(self):
+        Element.__init__(self)
+        self.position = Point2(0.,0.)
+        self.direction = 0.
+        self.size = 1.
+        self.state = 1
+        self.speed = 0.
+        
+class StaticElement(Element):
+    def __init__(self):
+        Element.__init__(self)
+        self.position = Point2(0.,0.)
+        self.direction = 0.
+        self.size = 1.
+        self.state = 1
+
 class Creature(MovingElement):
     def __init__(self):
         """
@@ -16,24 +36,6 @@ class Creature(MovingElement):
         ##history_position :
         """
         MovingElement.__init__(self)
-
-
-class MovingElement(Element):
-    def __init__(self):
-        Element.__init(self)
-        self.position = Vector2(0.,0.)
-        self.direction = 0.
-        self.size = 1.
-        self.state = 1
-        self.speed = 0.
-        
-class StaticElement(Element):
-    def __init__(self):
-        Element.__init(self)
-        self.position = Vector2(0.,0.)
-        self.direction = 0.
-        self.size = 1.
-        self.state = 1
 
 class Actor(MovingElement):
     def __init__(self):
