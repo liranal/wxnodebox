@@ -5,6 +5,9 @@
 SceneData module
 '''
 
+
+from GameManager import *
+
 #import wx
 #import cairo
 #import util
