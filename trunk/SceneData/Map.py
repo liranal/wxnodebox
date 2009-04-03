@@ -27,17 +27,21 @@ class World:
 		# une map est une matrice carrée d'entiers
 		self.sizeX = 0
 		self.sizeY = 0
+		self.null_area = Area()
 		self.area_list = []
 		self.actor = None
 		self.creatures_list = ()
 		
+		
 	def area(self, x, y):
 		assert type(x) == int
 		assert type(y) == int
-		assert x >= 0
-		assert y >= 0
-		assert x < self.sizeX
-		assert y < self.sizeY
+		#assert x >= 0
+		#assert y >= 0
+		#assert x < self.sizeX
+		#assert y < self.sizeY
+		if x<0 or y<0 or x >= self.sizeX or y >= self.sizeY:
+			return self.null_area
 		return self.area_list[x][y]
 			
 	def init_area(self):

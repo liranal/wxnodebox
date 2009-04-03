@@ -12,9 +12,23 @@ class GraphicEngine:
         assert isinstance(world, World)
         self.world = world
         self.size = (0.,0.)
-        self.area_size = (10,10)
+        self.area_size = (20,20)
 
     def update_actor(self, mouse_x, mouse_y):
+        # calculate new attribs
+        move = Vector2( (mouse_x - (self.size[X]/2.)) / self.area_size[X], \
+                        (mouse_y - (self.size[Y]/2.)) / self.area_size[Y])
+        angle = 0.
+        if move.x != 0.:
+            angle = math.atan( move.y / move.x)
+        elif move.y != 0.:
+            angle = math.atan2( move.x / move.y)
+        self.world.actor.angle = angle
+        self.world.actor.speed = 1.
+        # move actor
+        self.world.actor.position += move.normalize() * self.world.actor.speed
+        
+    def update_actor2(self, mouse_x, mouse_y):
         move = Vector2( (mouse_x - (self.size[X]/2.)) / self.area_size[X], \
                         (mouse_y - (self.size[Y]/2.)) / self.area_size[Y])
         self.world.actor.position += move
@@ -39,10 +53,10 @@ class GraphicEngine:
         #        (actor.position.x * self.area_size[X] + self.size[X] / 2., actor.position.y * self.area_size[Y] + self.size[Y] / 2.))
         # draw each area
         coord_y = int( (math.floor(coord.y) - coord.y) * self.area_size[Y] )
-        for y in range( areas_box[0][Y], areas_box[1][Y]):
+        for y in range( areas_box[0][Y], areas_box[1][Y]+1):
             # coord_x : coord on the screen
             coord_x = int( (math.floor(coord.x) - coord.x) * self.area_size[X] )
-            for x in range( areas_box[0][X], areas_box[1][X]):
+            for x in range( areas_box[0][X], areas_box[1][X]+1):
                 area = self.world.area(x,y)
                 assert isinstance( area, Area)
                 if len(filter(lambda x: isinstance(x,Wall),area.linked_elements)) != 0:
