@@ -29,8 +29,11 @@ class TestPanel(wx.Panel):
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         wx.EVT_ERASE_BACKGROUND(self, self.OnEraseBackground)
 
+        self.Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
+        self.Bind(wx.EVT_MOTION, self.OnMouseMotion)
         self.Bind(wx.EVT_LEFT_DOWN, self.OnMouseLeftDown)
         self.position = (0,0)
+        self.mousedown = False
         
         self.game = GameManager()
         self.game.initialize_world( "SceneData\\Level0.png")
@@ -50,12 +53,35 @@ class TestPanel(wx.Panel):
     def OnEraseBackground(self, event):
         pass # Or None
 
+    #def OnMouseLeftDown(self, event):
+        ## récupération de la position souris relative à la fenêtre
+        #self.position = event.GetPosition()
+        ## calcul la nouvelle position de l'acteur
+        ##rel_posx = self.Size.x
+        #self.game.graphics.update_actor( self.position[0], self.position[1])
+        #self.Refresh()
+        
     def OnMouseLeftDown(self, event):
-        # récupération de la position souris relative à la fenêtre
         self.position = event.GetPosition()
-        # calcul la nouvelle position de l'acteur
-        #rel_posx = self.Size.x
-        self.game.graphics.update_actor( self.position[0], self.position[1])
+        self.MOUSEX = self.position[0]
+        self.MOUSEY = self.position[1]
+        self.mousedown = True
+        self.game.graphics.update_actor( self.MOUSEX, self.MOUSEY)
+        self.Refresh()
+
+    def OnMouseLeftUp(self, event):
+        self.position = event.GetPosition()
+        self.MOUSEX = self.position[0]
+        self.MOUSEY = self.position[1]
+        self.mousedown = False
+        self.Refresh()
+        
+    def OnMouseMotion(self, event):
+        self.position = event.GetPosition()
+        self.MOUSEX = self.position[0]
+        self.MOUSEY = self.position[1]
+        if self.mousedown == True:
+            self.game.graphics.update_actor( self.MOUSEX, self.MOUSEY)
         self.Refresh()
         
     def Render(self, dc):
