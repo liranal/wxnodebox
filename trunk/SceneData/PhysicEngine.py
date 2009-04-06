@@ -52,6 +52,56 @@ class PhysicEngine:
 		self.read_events()
 		# move actor
 		actor = self.world.actor
+		#self.move_actor2( actor, delta_time)
+		self.move_actor2( actor, delta_time)
+		#######################################
+		## OLD
+		# move actor
+		#self.move_actor( self.actor, delta_time)
+		## move creatures
+		#creatures_list = self.world.creatures_list
+		#for element in creatures_list:
+			#self.move_creature( element, delta_time)
+		## Actificial Intelligence
+		#for element in creatures_list:
+			#self.update_creature_ia( element, world)
+		## event
+		### TO DO - ?? which ??
+
+	def move_actor(self, actor, delta_time):
+		#
+		if actor.speed <= 0.:
+			return
+		move = actor.aim - actor.position
+		delta_move = move.normalize() * actor.speed * delta_time
+		# check delta_move : MUST delta_time > 0. and delta_time<=1.
+		# delta_move = delta_time * move
+		if move.x != 0.:
+			delta_time = delta_move.x / move.x
+		else:
+			delta_time = delta_move.y / move.y
+		if delta_time<0. or delta_time>1.:
+			delta_move = move
+		go = Raymapping()
+		# result = ( new_element_position, collision)
+		count = 1
+		while count < 4:
+			(new_position, collision) = go.update_element_position( actor, delta_move, self.world)
+			actor.position = new_position
+			if collision == None:
+				return
+			# we have to change delta_move angle
+			dt_to_go = 1. - collision.dt
+			rotate_angle = math.pi / 3
+			new_delta_move = (dt_to_go * delta_move).rotate( rotate_angle)
+			count += 1
+		## the end
+		## add actor to new area
+		#self.attach_element_in_world( self.actor)
+		
+		
+	# move actor classic
+	def move_actor2(self, actor, delta_time):
 		if actor.speed != 0.:
 			move = (actor.aim - actor.position)
 			delta_move = move.normalize() * actor.speed * delta_time
@@ -62,20 +112,8 @@ class PhysicEngine:
 				actor.speed = 0.
 			else:
 				actor.position += delta_move
-		return
-		# move actor
-		self.move_actor( self.actor, delta_time)
-		# move creatures
-		creatures_list = self.world.creatures_list
-		for element in creatures_list:
-			self.move_creature( element, delta_time)
-		# Actificial Intelligence
-		for element in creatures_list:
-			self.update_creature_ia( element, world)
-		# event
-		## TO DO - ?? which ??
-
-	def move_actor(self, actor, delta_time):
+		
+	def move_actor3(self, actor, delta_time):
 		old_position = actor.position
 		# calculate direction vector
 		direction_vect = self.calculate_direction_vector( actor, delta_time)
@@ -152,6 +190,10 @@ class PhysicEngine:
 				self.world.area(posx, posy).remove_linked_element(element)
 
 
+	def test(self):
+		go = Raymapping()
+		go.update_element_position( moving_element, direction_vect, world)
+				
 				
 ## TODO
 ## il faut réfléchir à remplacer le isHorizontal et isVertical par une valeur faible mais non null de direction_vect
@@ -189,12 +231,14 @@ class Raymapping:
 		direction_vect = Vector2()
 		return = (isRight, isUp, isHorizontal, isVertical) = (boolean, boolean, boolean, boolean)
 		"""
-		isRight, isUp, isHorizontal, isVertical = False, False, True, True
+		isRight, isUp, isHorizontal, isVertical = False, False, False, False
 		if direction_vect.x == 0.:
 			isHorizontal = False
+			isVertical = True
 		elif direction_vect.x > 0.:
 			isRight = True
 		if direction_vect.y == 0.:
+			isHorizontal = True
 			isVertical = False
 		elif direction_vect.y > 0.:
 			isUp = True
@@ -239,7 +283,7 @@ class Raymapping:
 		moving_element = MovingElement()
 		direction_vect = Vector2()
 		world = World()
-		return = None
+		return = ( element_position, collision)
 		Exit > moving_element.position is updated'''
 		# initialize direction
 		direction = self.define_direction( direction_vect)
@@ -255,9 +299,11 @@ class Raymapping:
 		# init delta time
 		dt0 = 0
 		# find corner
-		g_to_corner = Vector2( moving_element.position.x + moving_element.size*x_factor, \
-							   moving_element.position.y + moving_element.size*y_factor)
-		element_position = Point2( moving_element.position.x, moving_element.position.x)
+		#g_to_corner = Vector2( moving_element.position.x + moving_element.size*x_factor, \
+		#					   moving_element.position.y + moving_element.size*y_factor)
+		g_to_corner = Vector2( moving_element.size * x_factor, \
+							   moving_element.size * y_factor)
+		element_position = moving_element.position
 
 		area_next_collisions_list = []
 		#########################################################
@@ -265,24 +311,26 @@ class Raymapping:
 			# corner point coordinate
 			corner_point = element_position + g_to_corner # Point2
 			# areas borders
-			areas_bounds = self.define_area_box( moving_element, element_position)
+			areas_bounds = self.define_areas_box( moving_element) ####, element_position)
 			areas_to_check = self.select_areas_to_check( areas_bounds, direction)
 
 			# prepare futur next area (and get max dt1)
-			next_area_collision = self.calculate_next_area( areas_bounds, direction, corner_point, direction_vect, dt0, world)
-			dt1 = max(next_area_collision[2], 1.)
+			next_area_collision = self.calculate_next_area( areas_bounds, direction, corner_point, direction_vect, world)
+			####next_area_collision = self.calculate_next_area( areas_bounds, direction, corner_point, direction_vect, dt0, world)
+			dt1 = min(next_area_collision[2], 1.)
 
 			# get collision in this area group
 			collisions_list = self.calculate_moving_element_collisions \
-							( corner_point, direction_vect, (dt0, dt1), \
-							  area_to_test_list, area_next_collisions_list)
+							( corner_point, direction, direction_vect, (dt0, dt1), world, \
+							  areas_to_check, area_next_collisions_list)
 
 			# if no collision, go to the next position
-			if len(area_group_collision) == 0:
+			if len(collisions_list) == 0:
 				# move_element to the next area
 				dt0 = dt1
-				element_position = Point2( moving_element.position.x * direction_vect.x*dt0, \
-										   moving_element.position.y * direction_vect.y*dt0)
+				element_position = Point2( moving_element.position.x + direction_vect.x*dt0, \
+										   moving_element.position.y + direction_vect.y*dt0)
+				collision = None
 			else:
 				# if collision, select the dt minus one
 				collision = reduce(lambda x,y: min(a,b, lambda c: c.dt), collisions_list)
@@ -291,9 +339,10 @@ class Raymapping:
 		#########################################################
 		# stop of the moving element
 		# update element position
-		moving_element.position = element_position
+		##moving_element.position = element_position
+		return (element_position, collision)
 
-	def calculate_moving_element_collisions(self, corner_point, direction_vect, delta_time, \
+	def calculate_moving_element_collisions(self, corner_point, direction, direction_vect, delta_time, world, \
 											areas_to_check, temp_collisions):
 		"""Calcule les collisions avec l'élément mobile dans les zones listées uniquement.
 		L'ensemble des collisions détectées d'une zone est stocké dans la liste temp.
@@ -320,7 +369,8 @@ class Raymapping:
 				area_collisions = area_tested
 			else:
 				# get collision in this area
-				area_collisions = self.calculate_area_collisions( temp_collisions)
+				####area_collisions = self.calculate_area_collisions( temp_collisions)
+				area_collisions = self.calculate_area_collisions( area, direction, corner_point, direction_vect)
 				# add all collision of this area
 				temp_collisions += area_collisions
 			collisions_list += area_collisions

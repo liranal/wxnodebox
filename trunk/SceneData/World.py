@@ -34,8 +34,10 @@ class World:
 		
 		
 	def area(self, x, y):
-		assert type(x) == int
-		assert type(y) == int
+		#assert type(x) == int
+		#assert type(y) == int
+		assert isinstance(x, int)
+		assert isinstance(y, int)
 		#assert x >= 0
 		#assert y >= 0
 		#assert x < self.sizeX
