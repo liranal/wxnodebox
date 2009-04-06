@@ -4,26 +4,65 @@
 import math
 from euclid import *
 
+from World import *
+from EventsManager import *
+
 X = 0
 Y = 1
 
 
 class PhysicEngine:
-	def __init__(self):
-		self.world = None
-		self.actor = None
+	def __init__(self, world, events_manager):
+		assert isinstance(world, World)
+		assert isinstance(events_manager, EventsManager)
+		self.world = world
+		self.events_manager = events_manager
+		#self.actor = None
 		#self.objects_list = []
 		#self.creatures_list = []
 
-	def initialize(self, my_world, my_actor):
-		self.world = my_world
-		self.actor = my_actor
+	#def initialize(self, my_world, my_actor):
+		#self.world = my_world
+		#self.actor = my_actor
 
 	#def add_map(self, my_map):
 	#	self.world = my_map
+	
+	def read_events(self):
+		events = self.events_manager.events
+		while len(events) != 0:
+			event = events.pop()
+			if event.subject == 'ACTOR_AIM':
+				actor = self.world.actor
+				# update actor aim
+				actor.aim = actor.position + event.aim
+				# update actor speed
+				actor.speed = 1.
+				# update actor angle
+				actor.angle = math.atan2( event.aim.y, event.aim.x)
+				## move actor
+				#self.world.actor.position += move.normalize() * self.world.actor.speed
+				pass
+			pass			
 
 	def turn(self):
-		delta_time = 0.5
+		# delta time of the turn
+		delta_time = 1.
+		# read events
+		self.read_events()
+		# move actor
+		actor = self.world.actor
+		if actor.speed != 0.:
+			move = (actor.aim - actor.position)
+			delta_move = move.normalize() * actor.speed * delta_time
+			angle = math.atan2( move.y, move.x)
+			if abs(move) < abs(delta_move):
+				# to fast
+				actor.position = actor.aim
+				actor.speed = 0.
+			else:
+				actor.position += delta_move
+		return
 		# move actor
 		self.move_actor( self.actor, delta_time)
 		# move creatures

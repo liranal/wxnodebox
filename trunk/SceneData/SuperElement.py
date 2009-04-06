@@ -15,6 +15,8 @@ class MovingElement(Element):
         self.size = 1.
         self.state = 1
         self.speed = 0.
+        self.angle = 0.
+        self.aim = Point2(0.,0.)
         
 class StaticElement(Element):
     def __init__(self):
