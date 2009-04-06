@@ -2,43 +2,51 @@
 # -*- coding: iso-8859-1 -*- 
 
 from euclid import *
-from Map import *
+from World import *
+from EventsManager import *
+
+from PycairoDrawer import *
 
 X=0
 Y=1
 
 class GraphicEngine:
-    def __init__(self, world):
+    def __init__(self, world, events_manager):
         assert isinstance(world, World)
+        assert isinstance(events_manager, EventsManager)
         self.world = world
+	self.events = events_manager
         self.size = (0.,0.)
         self.area_size = (20,20)
+        self.drawer = PycairoDrawer(None)
 
     def update_actor(self, mouse_x, mouse_y):
-        # calculate new attribs
+        # calculate aim moving vector
         move = Vector2( (mouse_x - (self.size[X]/2.)) / self.area_size[X], \
                         (mouse_y - (self.size[Y]/2.)) / self.area_size[Y])
-        angle = 0.
-        if move.x != 0.:
-            angle = math.atan( move.y / move.x)
-        elif move.y != 0.:
-            angle = math.atan2( move.x / move.y)
-        self.world.actor.angle = angle
-        self.world.actor.speed = 1.
-        # move actor
-        self.world.actor.position += move.normalize() * self.world.actor.speed
+	# event
+        event = self.events.create_event( "ACTOR_AIM")
+        event.aim = move
+        ## move actor
+        #self.world.actor.position += move.normalize() * self.world.actor.speed
         
     def update_actor2(self, mouse_x, mouse_y):
         move = Vector2( (mouse_x - (self.size[X]/2.)) / self.area_size[X], \
                         (mouse_y - (self.size[Y]/2.)) / self.area_size[Y])
         self.world.actor.position += move
         
-    def draw(self, ctx):
+    def draw(self, *args):
         """ 
-        ctx = Context()
+	*args >>
+        dc = Context()
         """
-        #ctx = Context()
-        self.size = ( ctx.width, ctx.height)
+	##########################################
+	if len(args) != 1:
+	    raise Exception("Params Error")
+        dc = args[0]
+        self.drawer.update_init( *args)
+        self.size = ( dc.GetSize().x, dc.GetSize().y)
+	##########################################
         actor = self.world.actor
         # coordinates of corner up/left in the world
         coord = Point2( actor.position.x+actor.size - self.size[X]/(2. * self.area_size[X]), \
@@ -60,13 +68,13 @@ class GraphicEngine:
                 area = self.world.area(x,y)
                 assert isinstance( area, Area)
                 if len(filter(lambda x: isinstance(x,Wall),area.linked_elements)) != 0:
-                    ctx.fill(0.5,0.5,0)
-                    ctx.rect( coord_x, coord_y, self.area_size[X],self.area_size[Y])
+                    self.drawer.color( 0.5, 0.5, 0.0)
+                    self.drawer.rectangle( coord_x, coord_y, self.area_size[X], self.area_size[Y])
                 coord_x += self.area_size[X]
             coord_y += self.area_size[Y]
         # draw actor
-        ctx.fill(0.8,0.1,0.1)
         position = ( actor.position - coord ) * self.area_size[X]
-        ctx.rect( int(position.x), int(position.y), self.area_size[X],self.area_size[Y])
+        self.drawer.color( 0.8, 0.1, 0.1)
+        self.drawer.rectangle( int(position.x), int(position.y), self.area_size[X], self.area_size[Y])
 
     
