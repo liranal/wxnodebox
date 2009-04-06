@@ -15,7 +15,7 @@ class GraphicEngine:
         assert isinstance(world, World)
         assert isinstance(events_manager, EventsManager)
         self.world = world
-	self.events = events_manager
+        self.events = events_manager
         self.size = (0.,0.)
         self.area_size = (20,20)
         self.drawer = PycairoDrawer(None)
@@ -24,29 +24,29 @@ class GraphicEngine:
         # calculate aim moving vector
         move = Vector2( (mouse_x - (self.size[X]/2.)) / self.area_size[X], \
                         (mouse_y - (self.size[Y]/2.)) / self.area_size[Y])
-	# event
+        # event
         event = self.events.create_event( "ACTOR_AIM")
         event.aim = move
         ## move actor
         #self.world.actor.position += move.normalize() * self.world.actor.speed
-        
+
     def update_actor2(self, mouse_x, mouse_y):
         move = Vector2( (mouse_x - (self.size[X]/2.)) / self.area_size[X], \
                         (mouse_y - (self.size[Y]/2.)) / self.area_size[Y])
         self.world.actor.position += move
-        
+
     def draw(self, *args):
         """ 
 	*args >>
         dc = Context()
         """
-	##########################################
-	if len(args) != 1:
-	    raise Exception("Params Error")
+        ##########################################
+        if len(args) != 1:
+            raise Exception("Params Error")
         dc = args[0]
         self.drawer.update_init( *args)
         self.size = ( dc.GetSize().x, dc.GetSize().y)
-	##########################################
+        ##########################################
         actor = self.world.actor
         # coordinates of corner up/left in the world
         coord = Point2( actor.position.x+actor.size - self.size[X]/(2. * self.area_size[X]), \
@@ -77,4 +77,3 @@ class GraphicEngine:
         self.drawer.color( 0.8, 0.1, 0.1)
         self.drawer.rectangle( int(position.x), int(position.y), self.area_size[X], self.area_size[Y])
 
-    

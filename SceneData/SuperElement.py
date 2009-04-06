@@ -12,7 +12,7 @@ class MovingElement(Element):
         Element.__init__(self)
         self.position = Point2(0.,0.)
         self.direction = 0.
-        self.size = 1.
+        self.size = 0.5
         self.state = 1
         self.speed = 0.
         self.angle = 0.
