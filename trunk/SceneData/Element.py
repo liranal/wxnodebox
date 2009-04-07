@@ -23,6 +23,9 @@ class Element:
 		self.id = getNewElementId(self)
 		self.name="Element"+str(self.id)
 
+	def border(self):
+		return ( (self.position.x - self.size, self.position.y - self.size), \
+				 (self.position.x + self.size, self.position.y + self.size) )
 		
 # Global Variables
 elements_manager = ElementsManager()
