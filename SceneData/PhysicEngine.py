@@ -4,6 +4,8 @@
 import math
 from euclid import *
 
+from copy import copy
+
 from World import *
 from EventsManager import *
 
@@ -53,7 +55,7 @@ class PhysicEngine:
 		# move actor
 		actor = self.world.actor
 		#self.move_actor2( actor, delta_time)
-		self.move_actor2( actor, delta_time)
+		self.move_actor( actor, delta_time)
 		#######################################
 		## OLD
 		# move actor
@@ -73,7 +75,10 @@ class PhysicEngine:
 		if actor.speed <= 0.:
 			return
 		move = actor.aim - actor.position
-		delta_move = move.normalize() * actor.speed * delta_time
+		if move.x == move.y == 0.:
+			actor.speed = 0.
+			return
+		delta_move = actor.speed * delta_time * move.normalized()
 		# check delta_move : MUST delta_time > 0. and delta_time<=1.
 		# delta_move = delta_time * move
 		if move.x != 0.:
@@ -149,10 +154,7 @@ class PhysicEngine:
 		assert isinstance( element, MovingElement)
 		# calculate the new angle
 		direction = world.actor - element.position
-		if direction.x != 0.:
-			element.angle = math.atan( direction.y / direction.x)
-		else:
-			element.angle = math.atan2( direction.x / direction.y)
+		element.angle = math.atan2( direction.y, direction.x)
 
 	#def calculate_new_position(self, element, delta_time):
 		#initial_position = element.position()
@@ -212,6 +214,16 @@ class Raymapping:
 		return ( (int(element.position.x-element.size), int(element.position.y-element.size)), \
 				 (int(element.position.x+element.size), int(element.position.y+element.size)) )
 
+	def define_areas_box(self, element_position, element_size):
+		"""Calcule les coordonnées des deux zones extrêmes contenant l'élément (la zone min et la zone max)
+		element_position = Point2()
+		element_size = float
+		return = ( (indexXmin, indexYmin), (indexXmax, indexYmax))
+		"""
+		epsilon = 0.001
+		return ( (int(element_position.x-element_size-epsilon), int(element_position.y-element_size-epsilon)), \
+				 (int(element_position.x+element_size), int(element_position.y+element_size)) )
+
 	def select_areas_to_check(self, areas_box, direction):
 		"""Détermine la liste des coordonnées de zone à contrôler pour la collision
 		areas_box = ( (indexXmin, indexYmin), (indexXmax, indexYmax)) >> def define_areas_box()
@@ -224,7 +236,7 @@ class Raymapping:
 			return [ (x, areas_box[int(isUp)][Y]) for x in range( areas_box[0][X], areas_box[1][X]+1) ]
 		else:
 			return [ (areas_box[int(isRight)][X], y) for y in range( areas_box[0][Y], areas_box[1][Y]+1) ] + \
-				   [ (x, areas_box[int(isUp)][Y]) for x in range( areas_box[0][X], areas_box[1][X]) ]
+				   [ (x, areas_box[int(isUp)][Y]) for x in range( areas_box[0][X] + int(not isRight), areas_box[1][X] + int(not isRight)) ]
 
 	def define_direction(self, direction_vect):
 		""" Définit la direction au format boolean à partir d'un vecteur:
@@ -288,11 +300,11 @@ class Raymapping:
 		# initialize direction
 		direction = self.define_direction( direction_vect)
 		isRight, isUp, isHorizontal, isVertical = direction
-		if not isHorizontal or isRight:
+		if isRight: # or isHorizontal
 			x_factor = 1.
 		else:
 			x_factor = -1.
-		if not isVertical or isUp:
+		if isUp: # or isVertical
 			y_factor = 1.
 		else:
 			y_factor = -1.
@@ -303,7 +315,8 @@ class Raymapping:
 		#					   moving_element.position.y + moving_element.size*y_factor)
 		g_to_corner = Vector2( moving_element.size * x_factor, \
 							   moving_element.size * y_factor)
-		element_position = moving_element.position
+		element_position = copy( moving_element.position)
+		path = direction_vect
 
 		area_next_collisions_list = []
 		#########################################################
@@ -311,25 +324,25 @@ class Raymapping:
 			# corner point coordinate
 			corner_point = element_position + g_to_corner # Point2
 			# areas borders
-			areas_bounds = self.define_areas_box( moving_element) ####, element_position)
+			areas_bounds = self.define_areas_box( element_position, moving_element.size)
 			areas_to_check = self.select_areas_to_check( areas_bounds, direction)
 
 			# prepare futur next area (and get max dt1)
-			next_area_collision = self.calculate_next_area( areas_bounds, direction, corner_point, direction_vect, world)
-			####next_area_collision = self.calculate_next_area( areas_bounds, direction, corner_point, direction_vect, dt0, world)
+			next_area_collision = self.calculate_next_area( areas_bounds, direction, corner_point, path, world)
 			dt1 = min(next_area_collision[2], 1.)
+			dt0 = 0.
 
 			# get collision in this area group
 			collisions_list = self.calculate_moving_element_collisions \
-							( corner_point, direction, direction_vect, (dt0, dt1), world, \
+							( corner_point, direction, path, (dt0, dt1), world, \
 							  areas_to_check, area_next_collisions_list)
 
 			# if no collision, go to the next position
 			if len(collisions_list) == 0:
 				# move_element to the next area
 				dt0 = dt1
-				element_position = Point2( moving_element.position.x + direction_vect.x*dt0, \
-										   moving_element.position.y + direction_vect.y*dt0)
+				element_position = element_position + dt0 * path
+				path = (1 - dt0) * path
 				collision = None
 			else:
 				# if collision, select the dt minus one
@@ -364,19 +377,19 @@ class Raymapping:
 			area = world.area( areaX, areaY)
 			area_collisions_list = []
 			# xxxxx
-			area_tested = filter(lambda x: x.index_x==areaX and index_y==areaY, temp_collisions)
+			area_tested = filter(lambda x: x.index_x==areaX and x.index_y==areaY, temp_collisions)
 			if len(area_tested) != 0:
 				area_collisions = area_tested
 			else:
 				# get collision in this area
 				####area_collisions = self.calculate_area_collisions( temp_collisions)
-				area_collisions = self.calculate_area_collisions( area, direction, corner_point, direction_vect)
+				area_collisions = self.calculate_area_collisions( areaX, areaY, area, direction, corner_point, direction_vect)
 				# add all collision of this area
 				temp_collisions += area_collisions
 			collisions_list += area_collisions
 		return collisions_list
 
-	def calculate_area_collisions(self, area, direction, corner_point, direction_vect):
+	def calculate_area_collisions(self, areaX, areaY, area, direction, corner_point, direction_vect):
 		"""Calcule les collisions dans une zone
 		area = Area()
 		direction = (isRight, isUp, isHorizontal, isVertical) >> def define_direction()
@@ -387,27 +400,28 @@ class Raymapping:
 		isRight, isUp, isHorizontal, isVertical = direction
 		# elements in area > we list all collisions
 		for element in area.linked_elements:
-			dt = (element.border[not isRight][X] - corner_point.x) / direction_vect.x
 			isNearX = False
 			isCollisionX = False
-			if dt >= 0 and dt < 1:
-				isNearX = True
-				rayX = element.border[not isRight][X]
-				rayY = corner_point.y + dt * direction_vect.y
-				if rayY >= element.border[0][Y] and \
-				   rayY <= element.border[1][Y]:
-					isCollisionX = True
+			if not isVertical:
+				dt = (element.border()[not isRight][X] - corner_point.x) / direction_vect.x
+				if dt >= 0 and dt < 1:
+					isNearX = True
+					rayX = element.border()[not isRight][X]
+					rayY = corner_point.y + dt * direction_vect.y
+					if rayY >= element.border()[0][Y] and \
+					   rayY <= element.border()[1][Y]:
+						isCollisionX = True
 			isNearY = False
 			isCollisionY = False
-			if isCollisionX == False:
-				dt = (element.border[not isUp][Y] - point.y) / direction_vect.y
+			if isCollisionX == False and not isHorizontal:
+				dt = (element.border()[not isUp][Y] - corner_point.y) / direction_vect.y
 				# dt between 0. and 1.
 				if dt >= 0 and dt < 1:
 					isNearY = True
 					rayX = corner_point.x + dt * direction_vect.x
-					rayY = element.border[not isUp][Y]
-					if rayX >= element.border[0][X] and \
-					   rayX <= element.border[1][X]:
+					rayY = element.border()[not isUp][Y]
+					if rayX >= element.border()[0][X] and \
+					   rayX <= element.border()[1][X]:
 						isCollisionY = True
 			if isCollisionX == True or isCollisionY == True:
 				# there is collision in (rayX,rayY) point with (dt) time
