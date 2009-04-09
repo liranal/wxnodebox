@@ -300,6 +300,14 @@ class Vector2:
         ##y' = sin(theta)*x + cos(theta)*y
         return Vector2( self.x * math.cos(angle) - self.y * math.sin(angle),
                         self.x * math.sin(angle) + self.y * math.cos(angle))
+
+    def mul_factor(self, factor_vect):
+        return Vector2( self.x * factor_vect.x,
+                        self.y * factor_vect.y)
+    
+    def div_factor(self, factor_vect):
+        return Vector2( self.x / factor_vect.x,
+                        self.y / factor_vect.y)
     
 class Vector3:
     __slots__ = ['x', 'y', 'z']

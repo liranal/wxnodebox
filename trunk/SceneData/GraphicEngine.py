@@ -46,37 +46,33 @@ class GraphicEngine:
         dc = args[0]
         self.drawer.update_init( *args)
         self.size = ( dc.GetSize().x, dc.GetSize().y)
+        screen_size = Vector2( self.size[0], self.size[1])
+        area_screen_size = Vector2( self.area_size[X], self.area_size[Y])
         ##########################################
         actor = self.world.actor
         # coordinates of corner up/left in the world
-        coord = Point2( actor.position.x+actor.size - self.size[X]/(2. * self.area_size[X]), \
-                        actor.position.y+actor.size - self.size[Y]/(2. * self.area_size[Y]))
+        coord = actor.position - screen_size.div_factor( 2. * area_screen_size)
         # coord in the world
-        box = ( coord, coord + Vector2( self.size[X] / float(self.area_size[X]), \
-                                        self.size[Y] / float(self.area_size[Y])) )
+        box = ( coord, coord + screen_size.div_factor( area_screen_size))
         # coord of area
         areas_box = ( (int(box[0].x), int(box[0].y)), \
                       (int(box[1].x), int(box[1].y)) )
-        #box = ( (actor.position.x * self.area_size[X] - self.size[X] / 2., actor.position.y * self.area_size[Y] - self.size[Y] / 2.), \
-        #        (actor.position.x * self.area_size[X] + self.size[X] / 2., actor.position.y * self.area_size[Y] + self.size[Y] / 2.))
         # draw each area
-        coord_y = int( (math.floor(coord.y) - coord.y) * self.area_size[Y] )
+        coord_y = int( (areas_box[0][Y] - coord.y) * area_screen_size.y )
         for y in range( areas_box[0][Y], areas_box[1][Y]+1):
             # coord_x : coord on the screen
-            coord_x = int( (math.floor(coord.x) - coord.x) * self.area_size[X] )
+            coord_x = int( (areas_box[0][X] - coord.x) * area_screen_size.x )
             for x in range( areas_box[0][X], areas_box[1][X]+1):
                 area = self.world.area(x,y)
                 assert isinstance( area, Area)
                 if len(filter(lambda x: isinstance(x,Wall),area.linked_elements)) != 0:
                     self.drawer.color( 0.5, 0.5, 0.0)
-                    self.drawer.rectangle( coord_x, coord_y, self.area_size[X], self.area_size[Y])
-                coord_x += self.area_size[X]
-            coord_y += self.area_size[Y]
+                    self.drawer.rectangle( coord_x, coord_y, area_screen_size.x, area_screen_size.y)
+                coord_x += area_screen_size.x
+            coord_y += area_screen_size.y
         # draw actor
-        size = Vector2(actor.size, actor.size)
-        ##position = ( actor.position - coord - size) * self.area_size[X]
-        position = self.area_size[X] * ( actor.position - coord)
+        actor_size = Vector2(actor.size, actor.size)
+        corner_position = ( actor.position - actor_size - coord) * area_screen_size.x
         self.drawer.color( 0.8, 0.1, 0.1)
-        ##self.drawer.rectangle( int(position.x), int(position.y), self.area_size[X], self.area_size[Y])
-        self.drawer.rectangle( position.x, position.y, self.area_size[X], self.area_size[Y])
+        self.drawer.rectangle( int( corner_position.x), int( corner_position.y), area_screen_size.x, area_screen_size.y)
 
