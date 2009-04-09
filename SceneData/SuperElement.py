@@ -42,6 +42,7 @@ class Creature(MovingElement):
 class Actor(MovingElement):
     def __init__(self):
         MovingElement.__init__(self)
+        self.angle_pref = 1.
         
     
 #if __name__ == '__main__':
