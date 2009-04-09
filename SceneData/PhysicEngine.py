@@ -49,7 +49,7 @@ class PhysicEngine:
 
 	def turn(self):
 		# delta time of the turn
-		delta_time = 1.
+		delta_time = 0.1
 		# read events
 		self.read_events()
 		# move actor
@@ -85,11 +85,13 @@ class PhysicEngine:
 			delta_time = delta_move.x / move.x
 		else:
 			delta_time = delta_move.y / move.y
-		if delta_time<0. or delta_time>1.:
+		if delta_time>1.:
 			delta_move = move
+		elif delta_time<0.:
+			delta_move = Vector2(0., 0.)
 		go = Raymapping()
 		# result = ( new_element_position, collision)
-		count = 1
+		count = 3
 		while count < 4:
 			(new_position, collision) = go.update_element_position( actor, delta_move, self.world)
 			if collision == None:
@@ -97,9 +99,9 @@ class PhysicEngine:
 				return
 			# we have to change delta_move angle
 			dt_move = new_position - actor.position
-			if dt_move.x != 0.:
+			if delta_move.x != 0.:
 				dt = dt_move.x / delta_move.x
-			elif dt_move.y != 0.:
+			elif delta_move.y != 0.:
 				dt = dt_move.y / delta_move.y
 			else:
 				dt = 0.
@@ -313,11 +315,11 @@ class Raymapping:
 		# initialize direction
 		direction = self.define_direction( direction_vect)
 		isRight, isUp, isHorizontal, isVertical = direction
-		if isRight: # or isHorizontal
+		if isRight:
 			x_factor = 1.
 		else:
 			x_factor = -1.
-		if isUp: # or isVertical
+		if isUp:
 			y_factor = 1.
 		else:
 			y_factor = -1.
