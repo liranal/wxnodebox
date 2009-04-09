@@ -73,7 +73,10 @@ class GraphicEngine:
                 coord_x += self.area_size[X]
             coord_y += self.area_size[Y]
         # draw actor
-        position = ( actor.position - coord ) * self.area_size[X]
+        size = Vector2(actor.size, actor.size)
+        ##position = ( actor.position - coord - size) * self.area_size[X]
+        position = self.area_size[X] * ( actor.position - coord)
         self.drawer.color( 0.8, 0.1, 0.1)
-        self.drawer.rectangle( int(position.x), int(position.y), self.area_size[X], self.area_size[Y])
+        ##self.drawer.rectangle( int(position.x), int(position.y), self.area_size[X], self.area_size[Y])
+        self.drawer.rectangle( position.x, position.y, self.area_size[X], self.area_size[Y])
 

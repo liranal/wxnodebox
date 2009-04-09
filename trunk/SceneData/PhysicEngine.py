@@ -92,16 +92,25 @@ class PhysicEngine:
 		count = 1
 		while count < 4:
 			(new_position, collision) = go.update_element_position( actor, delta_move, self.world)
-			actor.position = new_position
 			if collision == None:
+				actor.position = new_position
 				return
 			# we have to change delta_move angle
-			dt_to_go = 1. - collision.dt
-			rotate_angle = math.pi / 3
-			new_delta_move = (dt_to_go * delta_move).rotate( rotate_angle)
+			dt_move = new_position - actor.position
+			if dt_move.x != 0.:
+				dt = dt_move.x / delta_move.x
+			elif dt_move.y != 0.:
+				dt = dt_move.y / delta_move.y
+			else:
+				dt = 0.
+			dt_to_go = 1. - dt
+			rotate_angle = actor.angle_pref * math.pi / 3
+			delta_move = dt_to_go * delta_move.rotate( rotate_angle)
+			actor.position = new_position
 			count += 1
 		## the end
 		## add actor to new area
+		actor.angle_pref *= -1.
 		#self.attach_element_in_world( self.actor)
 		
 		
@@ -220,7 +229,7 @@ class Raymapping:
 		element_size = float
 		return = ( (indexXmin, indexYmin), (indexXmax, indexYmax))
 		"""
-		epsilon = 0.001
+		epsilon = 0.0001
 		return ( (int(element_position.x-element_size-epsilon), int(element_position.y-element_size-epsilon)), \
 				 (int(element_position.x+element_size), int(element_position.y+element_size)) )
 
@@ -270,12 +279,16 @@ class Raymapping:
 		area_size = 1.
 		if isRight:
 			shiftX = area_size
+			epsilonX = 0.
 		else:
 			shiftX = 0.
+			epsilonX = -0.0001
 		if isUp:
 			shiftY = area_size
+			epsilonY = 0.
 		else:
 			shiftY = 0.
+			epsilonY = -0.0001
 		if isVertical:
 			dtX = 9999999.
 		else:
@@ -287,8 +300,8 @@ class Raymapping:
 		dt = min(dtX, dtY)
 		rayX = corner_point.x + dt * direction_vect.x
 		rayY = corner_point.y + dt * direction_vect.y
-		next_area = (int(rayX), int(rayY))
-		return (int(rayX), int(rayY), dt)
+		#next_area = (int(rayX), int(rayY))
+		return (int(rayX+epsilonX), int(rayY+epsilonY), dt)
 
 	def update_element_position(self, moving_element, direction_vect, world):
 		'''MAIN PROCEDURE : Recherche si elle existe la collision entre un élément mouvant et son environnement
@@ -316,7 +329,7 @@ class Raymapping:
 		g_to_corner = Vector2( moving_element.size * x_factor, \
 							   moving_element.size * y_factor)
 		element_position = copy( moving_element.position)
-		path = direction_vect
+		path = direction_vect.copy()
 
 		area_next_collisions_list = []
 		#########################################################
@@ -377,15 +390,15 @@ class Raymapping:
 			area = world.area( areaX, areaY)
 			area_collisions_list = []
 			# xxxxx
-			area_tested = filter(lambda x: x.index_x==areaX and x.index_y==areaY, temp_collisions)
-			if len(area_tested) != 0:
-				area_collisions = area_tested
-			else:
-				# get collision in this area
-				####area_collisions = self.calculate_area_collisions( temp_collisions)
-				area_collisions = self.calculate_area_collisions( areaX, areaY, area, direction, corner_point, direction_vect)
-				# add all collision of this area
-				temp_collisions += area_collisions
+			##area_tested = filter(lambda x: x.index_x==areaX and x.index_y==areaY, temp_collisions)
+			##if len(area_tested) != 0:
+			##	area_collisions = area_tested
+			##else:
+			# get collision in this area
+			####area_collisions = self.calculate_area_collisions( temp_collisions)
+			area_collisions = self.calculate_area_collisions( areaX, areaY, area, direction, corner_point, direction_vect)
+			# add all collision of this area
+			temp_collisions += area_collisions
 			collisions_list += area_collisions
 		return collisions_list
 
@@ -426,7 +439,13 @@ class Raymapping:
 			if isCollisionX == True or isCollisionY == True:
 				# there is collision in (rayX,rayY) point with (dt) time
 				# but is it the right area ?
-				collision = Collision( rayX, rayY, int(rayX), int(rayY), dt, element)
+				epsilonX = 0.
+				if not isRight:
+					epsilonX = -0.0001
+				epsilonY = 0.
+				if not isUp:
+					epsilonY = -0.0001
+				collision = Collision( rayX, rayY, int(rayX+epsilonX), int(rayY+epsilonY), dt, element)
 				if collision.index_x == areaX and collision.index_y == areaY:
 					area_collisions.append( collision )
 				## TO DO : optimisation à prévoir

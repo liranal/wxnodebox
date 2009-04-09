@@ -296,8 +296,10 @@ class Vector2:
     def rotate(self, angle):
         # angle in radian
         #asser isinstance( angle, float)
-        return Vector2( self.x * math.cos(angle),
-                        self.y * math.sin(angle))
+        ##x' = cos(theta)*x - sin(theta)*y 
+        ##y' = sin(theta)*x + cos(theta)*y
+        return Vector2( self.x * math.cos(angle) - self.y * math.sin(angle),
+                        self.x * math.sin(angle) + self.y * math.cos(angle))
     
 class Vector3:
     __slots__ = ['x', 'y', 'z']
