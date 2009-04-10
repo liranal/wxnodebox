@@ -49,7 +49,7 @@ class PhysicEngine:
 
 	def turn(self):
 		# delta time of the turn
-		delta_time = 0.1
+		delta_time = 0.5
 		# read events
 		self.read_events()
 		# move actor
@@ -217,13 +217,13 @@ class Raymapping:
 	>> main procedure : def calculate_collision()
 	"""
 
-	def define_areas_box(self, element):
-		"""Calcule les coordonnées des deux zones extrêmes contenant l'élément (la zone min et la zone max)
-		element = Element()
-		return = ( (indexXmin, indexYmin), (indexXmax, indexYmax))
-		"""
-		return ( (int(element.position.x-element.size), int(element.position.y-element.size)), \
-				 (int(element.position.x+element.size), int(element.position.y+element.size)) )
+	#def define_areas_box(self, element):
+	#	"""Calcule les coordonnées des deux zones extrêmes contenant l'élément (la zone min et la zone max)
+	#	element = Element()
+	#	return = ( (indexXmin, indexYmin), (indexXmax, indexYmax))
+	#	"""
+	#	return ( (int(element.position.x-element.size), int(element.position.y-element.size)), \
+	#			 (int(element.position.x+element.size), int(element.position.y+element.size)) )
 
 	def define_areas_box(self, element_position, element_size):
 		"""Calcule les coordonnées des deux zones extrêmes contenant l'élément (la zone min et la zone max)
@@ -349,7 +349,7 @@ class Raymapping:
 
 			# get collision in this area group
 			collisions_list = self.calculate_moving_element_collisions \
-							( corner_point, direction, path, (dt0, dt1), world, \
+							( corner_point, direction, path, (dt0, dt1), moving_element.size, world, \
 							  areas_to_check, area_next_collisions_list)
 
 			# if no collision, go to the next position
@@ -361,7 +361,7 @@ class Raymapping:
 				collision = None
 			else:
 				# if collision, select the dt minus one
-				collision = reduce(lambda x,y: min(a,b, lambda c: c.dt), collisions_list)
+				collision = reduce(lambda x,y: min(x,y, lambda c: c.dt), collisions_list)
 				element_position = Point2(collision.x, collision.y) - g_to_corner
 				dt0=1.
 		#########################################################
@@ -370,7 +370,8 @@ class Raymapping:
 		##moving_element.position = element_position
 		return (element_position, collision)
 
-	def calculate_moving_element_collisions(self, corner_point, direction, direction_vect, delta_time, world, \
+	def calculate_moving_element_collisions(self, corner_point, direction, direction_vect, delta_time, \
+											moving_element_size, world, \
 											areas_to_check, temp_collisions):
 		"""Calcule les collisions avec l'élément mobile dans les zones listées uniquement.
 		L'ensemble des collisions détectées d'une zone est stocké dans la liste temp.
@@ -398,13 +399,13 @@ class Raymapping:
 			##else:
 			# get collision in this area
 			####area_collisions = self.calculate_area_collisions( temp_collisions)
-			area_collisions = self.calculate_area_collisions( areaX, areaY, area, direction, corner_point, direction_vect)
+			area_collisions = self.calculate_area_collisions( areaX, areaY, area, direction, corner_point, direction_vect, moving_element_size)
 			# add all collision of this area
 			temp_collisions += area_collisions
 			collisions_list += area_collisions
 		return collisions_list
 
-	def calculate_area_collisions(self, areaX, areaY, area, direction, corner_point, direction_vect):
+	def calculate_area_collisions(self, areaX, areaY, area, direction, corner_point, direction_vect, moving_element_size):
 		"""Calcule les collisions dans une zone
 		area = Area()
 		direction = (isRight, isUp, isHorizontal, isVertical) >> def define_direction()
@@ -413,6 +414,7 @@ class Raymapping:
 		"""
 		area_collisions = []
 		isRight, isUp, isHorizontal, isVertical = direction
+		epsilon = 0.0001
 		# elements in area > we list all collisions
 		for element in area.linked_elements:
 			isNearX = False
@@ -423,9 +425,13 @@ class Raymapping:
 					isNearX = True
 					rayX = element.border()[not isRight][X]
 					rayY = corner_point.y + dt * direction_vect.y
-					if rayY >= element.border()[0][Y] and \
-					   rayY <= element.border()[1][Y]:
-						isCollisionX = True
+					# vérifier la collision entre le segment de l'objet element et le segment du corner_point
+					if isUp:
+						segment = ( rayY-2*moving_element_size+epsilon, rayY)
+					else:
+						segment = ( rayY, rayY+2*moving_element_size-epsilon)
+					isCollisionX = self.isSegmentCollision( segment,
+													   (element.border()[0][Y], element.border()[1][Y]))
 			isNearY = False
 			isCollisionY = False
 			if isCollisionX == False and not isHorizontal:
@@ -435,9 +441,12 @@ class Raymapping:
 					isNearY = True
 					rayX = corner_point.x + dt * direction_vect.x
 					rayY = element.border()[not isUp][Y]
-					if rayX >= element.border()[0][X] and \
-					   rayX <= element.border()[1][X]:
-						isCollisionY = True
+					if isRight:
+						segment = ( rayX-2*moving_element_size+epsilon, rayX)
+					else:
+						segment = ( rayX, rayX+2*moving_element_size-epsilon)
+					isCollisionY = self.isSegmentCollision( segment,
+													   (element.border()[0][X], element.border()[1][X]))
 			if isCollisionX == True or isCollisionY == True:
 				# there is collision in (rayX,rayY) point with (dt) time
 				# but is it the right area ?
@@ -448,8 +457,8 @@ class Raymapping:
 				if not isUp:
 					epsilonY = -0.0001
 				collision = Collision( rayX, rayY, int(rayX+epsilonX), int(rayY+epsilonY), dt, element)
-				if collision.index_x == areaX and collision.index_y == areaY:
-					area_collisions.append( collision )
+#				if collision.index_x == areaX and collision.index_y == areaY:
+				area_collisions.append( collision )
 				## TO DO : optimisation à prévoir
 				#else:
 				#	# collision out of the area
@@ -457,6 +466,21 @@ class Raymapping:
 			# end of for element in world.area( areaX, areaY).linked_elements:
 		return area_collisions
 
+	def isSegmentCollision(self, segmentA, segmentB):
+		"""
+		segmentA : couple de float (xA1, xA2)
+		segmentB : couple de float (xB1, xB2)
+		"""
+		if segmentB[0] <= segmentA[0] <= segmentB[1]:
+			return True
+		if segmentB[0] <= segmentA[1] <= segmentB[1]:
+			return True
+		if segmentA[0] <= segmentB[0] <= segmentA[1]:
+			return True
+		if segmentA[0] <= segmentB[1] <= segmentA[1]:
+			return True
+		return False
+		
 
 class Collision:
 	def __init__(self):
