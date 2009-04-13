@@ -21,8 +21,10 @@ class GameManager:
         assert isinstance(world_image, str)
         self.world.load_map_from_image( world_image)
         
-    def draw_scene(self, *args):
+    def turn(self):
         self.physics.turn()
+        
+    def draw_scene(self, *args):
         self.graphics.draw( *args)
         
 if __name__ == '__main__':

@@ -103,12 +103,13 @@ class Vector2:
         if isinstance(other, Vector2):
             return self.x == other.x and \
                    self.y == other.y
-        else:
-            assert hasattr(other, '__len__') and len(other) == 2
+        elif hasattr(other, '__len__') and len(other) == 2:
             return self.x == other[0] and \
                    self.y == other[1]
+        else:
+            False
 
-    def __neq__(self, other):
+    def __ne__(self, other):
         return not self.__eq__(other)
 
     def __nonzero__(self):
@@ -338,7 +339,7 @@ class Vector3:
                    self.y == other[1] and \
                    self.z == other[2]
 
-    def __neq__(self, other):
+    def __ne__(self, other):
         return not self.__eq__(other)
 
     def __nonzero__(self):
