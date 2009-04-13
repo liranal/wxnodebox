@@ -24,10 +24,14 @@ class Element:
 		self.name="Element"+str(self.id)
 
 	def border(self):
-		return ( (self.position.x - self.size, self.position.y - self.size), \
-				 (self.position.x + self.size, self.position.y + self.size) )
+		return ( self.position, \
+				 self.position + self.size)
+	
+	def area_bounds(self, area_size):
+		return ( ( int(self.position.x / area_size),  \
+				   int(self.position.y /area_size) ), \
+				 ( int((self.position.x + self.size.x - 1) / area_size), \
+				   int((self.position.y + self.size.y - 1) / area_size)) )
 		
 # Global Variables
 elements_manager = ElementsManager()
-
-	
