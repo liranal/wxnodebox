@@ -470,7 +470,9 @@ class Collision:
 		self.x, self.y, self.index_x, self.index_y, self.dt, self.element = \
 			x, y, index_x, index_y, dt, element
 
-
+	def __repr__(self):
+		return 'Collision(x=%.2f, y=%.2f, index_x=%d, index_y=%d, dt=%.2f, %r)' \
+			   % (self.x, self.y, self.index_x, self.index_y, self.dt, self.element)
 
 
 
