@@ -32,6 +32,10 @@ class Element:
 				   int(self.position.y /area_size) ), \
 				 ( int((self.position.x + self.size.x - 1) / area_size), \
 				   int((self.position.y + self.size.y - 1) / area_size)) )
-		
+
+	def __repr__(self):
+		return 'Element(id=%d, name=%s)' \
+			   % (self.id, self.name)
+	
 # Global Variables
 elements_manager = ElementsManager()
