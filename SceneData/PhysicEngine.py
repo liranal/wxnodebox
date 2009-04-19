@@ -13,15 +13,24 @@ from EventsManager import *
 X = 0
 Y = 1
 
-
 class PhysicEngine:
 	def __init__(self, world, events_manager):
 		assert isinstance(world, World)
 		assert isinstance(events_manager, EventsManager)
 		self.world = world
 		self.events_manager = events_manager
+		self.raymapping = Raymapping( world, events_manager)
+		self.simpleraymapping = SimpleAlgoRaymapping( world)
+		self.time = 0
+		#global gengine
+
+	def connect(self):
+		self.world.actor.connect_physics( self)
+		for creature in self.world.creatures_list:
+			creature.connect_physics(self)
 
 	def read_events(self):
+		"""extern events"""
 		events = self.events_manager.events
 		while len(events) != 0:
 			event = events.pop()
@@ -31,6 +40,8 @@ class PhysicEngine:
 				actor.aim = actor.position + event.aim
 				# update actor speed
 				actor.speed = 5
+				# status
+				actor.status = 'move'
 				## update actor angle
 				##actor.angle = math.atan2( event.aim.y, event.aim.x)
 			if event.subject == 'ACTOR_GUNFIRE':
@@ -38,168 +49,32 @@ class PhysicEngine:
 				# update actor aim
 				actor.gunfire_aim = actor.position + event.aim
 				# update actor speed
-				actor.status = 'FIRE'
-			if event.subject == 'GUNFIRE_IMPACT':
-				impact = event.impact
-				bullet = event.bullet
-				## lost life point
-				impact.life -= bullet.strength
-				impact.speed = 0
-				if impact.life <= 0:
-					impact.status = 'DEAD'
-					# event
-					event = events_manager.create_event( "KILLED")
-					event.killed = impact
-			if event.subject == 'KILLED':
-				x = event.killed
-				
+				actor.status = 'fire'
+			##if event.subject == 'GUNFIRE_IMPACT':
+				##impact = event.impact
+				##bullet = event.bullet
+				#### lost life point
+				##impact.life -= bullet.strength
+				##impact.speed = 0
+				##if impact.life <= 0:
+					##impact.status = 'DEAD'
+					### event
+					##event = self.events_manager.create_event( "KILLED")
+					##event.killed = impact
+			##if event.subject == 'KILLED':
+				##x = event.killed
 
 	def turn(self):
 		# delta time of the turn
-		delta_time = 1
+		self.time += 1
 		# read events
 		self.read_events()
 		# move actor
-		actor = self.world.actor
-		##go = SimpleAlgoRaymapping()
-		##go.move_element( actor, self.world)
-		if actor.status == 'FIRE':
-			actor.speed = 0
-			actor.status = None
-			go = Raymapping( self.world, self.events_manager)
-			bullet = Bullet( actor)
-			go.move_element( bullet)
-			# the end of the bullet
-		else:
-			go = Raymapping( self.world, self.events_manager)
-			go.move_element( actor)
+		self.world.actor.act()
 		# move creature
-		go = SimpleAlgoRaymapping()
 		creatures_list = self.world.creatures_list
 		for creature in creatures_list:
-			creature.aim = actor.position
-			self.world.remove_element( creature)
-			go.move_element( creature, self.world)
-			self.world.add_element( creature)
-			# creature actions
-			if abs( actor.position - creature.position) < 20:
-				self.world.remove_element( creature)
-				creature.position = Point2(621.00, 48.00)
-				self.world.add_element( creature)
-		#######################################
-		## TO DO - ?? which ??
-
-	#def move_actor_old(self, actor, delta_time):
-		##
-		#if actor.speed <= 0.:
-			#return
-		#move = actor.aim - actor.position
-		#if move.x == move.y == 0.:
-			#actor.speed = 0.
-			#return
-		#delta_move = actor.speed * delta_time * move.normalized()
-		## check delta_move : MUST delta_time > 0. and delta_time<=1.
-		## delta_move = delta_time * move
-		#if move.x != 0.:
-			#delta_time = delta_move.x / move.x
-		#else:
-			#delta_time = delta_move.y / move.y
-		#if delta_time>1.:
-			#delta_move = move
-		#elif delta_time<0.:
-			#delta_move = Vector2(0., 0.)
-		#go = Raymapping()
-		## result = ( new_element_position, collision)
-		#count = 0
-		#while count < 4:
-			#(new_position, collision) = go.update_element_position( actor, delta_move, self.world)
-			#if collision == None:
-				#actor.position = new_position
-				#return
-			## we have to change delta_move angle
-			#dt_move = new_position - actor.position
-			#if delta_move.x != 0.:
-				#dt = dt_move.x / delta_move.x
-			#elif delta_move.y != 0.:
-				#dt = dt_move.y / delta_move.y
-			#else:
-				#dt = 0.
-			#dt_to_go = 1. - dt
-			#rotate_angle = actor.angle_pref * math.pi / 3
-			#delta_move = dt_to_go * delta_move.rotate( rotate_angle)
-			#actor.position = new_position
-			#count += 1
-		### the end
-		### add actor to new area
-		#actor.angle_pref *= -1.
-		##self.attach_element_in_world( self.actor)
-		
-		
-	#def move_actor3(self, actor, delta_time):
-		#old_position = actor.position
-		## calculate direction vector
-		#direction_vect = self.calculate_direction_vector( actor, delta_time)
-		## remove actor from old area
-		#self.detach_element_in_world( self.actor)
-		## update position
-		#algo = Raymapping()
-		#algo.update_element_position( actor, direction_vect, self.world)
-		## add actor to new area
-		#self.attach_element_in_world( self.actor)
-
-	#def move_moving_element(self, element, delta_time):
-		#old_position = element.position
-		## calculate direction vector
-		#direction_vect = self.calculate_direction_vector( element, delta_time)
-		## remove actor from old area
-		#self.detach_element_in_world( self.element)
-		## update position
-		#algo = Raymapping()
-		#algo.update_element_position( element, direction_vect, self.world)
-		## add actor to new area
-		#self.attach_element_in_world( self.element)
-
-	#def calculate_direction_vector(self, element, delta_time):
-		#"""Calcule le vecteur de mouvement de l'élément
-		#"""
-		#assert isinstance( element, MovingElement)
-		#return Vector2( element.speed * delta_time, 0.).rotate( element.angle)
-
-	#def update_creature_ia(self, element, world):
-		#"""Met à jour la direction de déplacement
-		#"""
-		#assert isinstance( element, MovingElement)
-		## calculate the new angle
-		#direction = world.actor - element.position
-		#element.angle = math.atan2( direction.y, direction.x)
-
-	#def attach_element_in_world( actor):
-		#position = actor.position
-		#size = actor.size
-		## begin area part
-		#areaXb = int(position.x - size)
-		#areaYb = int(position.y - size)
-		## end area part
-		#areaXe = int(position.x + size)
-		#areaYe = int(position.y + size)
-		#for posy in range( areaYb, areaYe):
-			#for posx in range( areaXb, areaXe):
-				#self.world.area(posx, posy).add_linked_element(actor)
-
-	#def detach_element_in_world( element):
-		#position = element.position
-		#size = element.size
-		## begin area part
-		#areaXb = int(position.x - size)
-		#areaYb = int(position.y - size)
-		## end area part
-		#areaXe = int(position.x + size)
-		#areaYe = int(position.y + size)
-		#for posy in range( areaYb, areaYe):
-			#for posx in range( areaXb, areaXe):
-				#self.world.area(posx, posy).remove_linked_element(element)
-
-
+			creature.act()
 				
 				
 ## TODO
@@ -226,9 +101,7 @@ class Raymapping:
 			vector = new_vector
 		(new_position, collision) = self.update_element_position( actor, vector)
 		# new position
-		actor.manage_collision( new_position, collision, self.events_manager)
-		actor.position.x = int(new_position.x)
-		actor.position.y = int(new_position.y)
+		actor.manage_collision( new_position, collision)
 		
 		
 	def update_element_position(self, actor, direction_vector):
@@ -237,7 +110,7 @@ class Raymapping:
 		direction_vect = Vector2()
 		world = World()
 		return = ( element_position, collision)
-		Exit > moving_element.position is updated'''
+		NO --> Exit > moving_element.position is updated'''
 		# initialize direction
 		direction = self.define_direction( direction_vector)
 		isRight, isUp, isHorizontal, isVertical = direction
@@ -411,7 +284,7 @@ class Raymapping:
 						segment = ( rayY, rayY + actor_size.y - 1)
 					isCollisionX = self.isSegmentCollision \
 								 ( segment, \
-								   (element.border()[0][Y], element.border()[1][Y]))
+								   (element.border()[0][Y], element.border()[1][Y]-1))
 			isNearY = False
 			isCollisionY = False
 			if isCollisionX == False and not isHorizontal:
@@ -427,7 +300,7 @@ class Raymapping:
 						segment = ( rayX, rayX+actor_size.x -1)
 					isCollisionY = self.isSegmentCollision \
 								 ( segment, \
-								   (element.border()[0][X], element.border()[1][X]))
+								   (element.border()[0][X], element.border()[1][X]-1))
 			if isCollisionX == True or isCollisionY == True:
 				# there is collision in (rayX,rayY) point with (dt) time
 				# but is it the right area ?
@@ -483,8 +356,11 @@ class Collision:
 ##############################################################################
 
 class SimpleAlgoRaymapping:
-	def __init__(self):
-		self.area_size = 10
+
+	def __init__(self, world):
+		self.world = world
+		#self.area_size = 10
+		self.area_size = self.world.area_size
 	
 	def move_element(self, actor, world):
 		movement = actor.speed
@@ -506,7 +382,10 @@ class SimpleAlgoRaymapping:
 			else:
 				actor.increments += [ increment ]
 		
-	def update_collisions(self, actor, world):
+	def update_element_position(self, actor, direction_vector):
+		collision = None
+		new_position = actor.position
+		
 		# collisions list
 		collisions = []
 		# actor bounds
@@ -515,7 +394,21 @@ class SimpleAlgoRaymapping:
 		rangex = range( int(box[0].x), int(box[1].x)+1)
 		for y in rangey:
 			for x in rangex:
-				collisions += self.find_new_collisions( actor, world.area(x,y))
+				collisions += self.find_new_collisions( actor, self.world.area(x,y))
+		#return collisions
+		
+		return (new_position, collision)
+				
+	def update_collisions(self, actor):
+		# collisions list
+		collisions = []
+		# actor bounds
+		box = self.define_new_box( actor)
+		rangey = range( int(box[0].y), int(box[1].y)+1)
+		rangex = range( int(box[0].x), int(box[1].x)+1)
+		for y in rangey:
+			for x in rangex:
+				collisions += self.find_new_collisions( actor, self.world.area(x,y))
 		return collisions
 
 	def define_new_box(self, element):

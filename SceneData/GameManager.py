@@ -20,6 +20,7 @@ class GameManager:
         assert isinstance(self.world, World)
         assert isinstance(world_image, str)
         self.world.load_map_from_image( world_image)
+        self.physics.connect()
         
     def turn(self):
         self.physics.turn()

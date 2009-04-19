@@ -5,6 +5,7 @@ from SuperElement import *
 
 import Image
 
+
 class Wall(StaticElement):
 	def __init__(self, index_x, index_y):
 		StaticElement.__init__(self)
@@ -105,7 +106,7 @@ class World:
 		for index in range(0,20):
 			creature = Creature()
 			creature.position = Point2(635.00+(index * 10), 40.00)
-			creature.speed = 2
+			creature.speed = 4
 			self.creatures_list.append( creature)
 			self.add_element( creature)
 			
