@@ -1,0 +1,6 @@
+#! /bin/sh
+#
+
+code=slashManager.py
+
+{ python $code ${1+"$@"} ; } > /tmp/sb$$_`date|sed 's/ /_/g'` 2>&1
