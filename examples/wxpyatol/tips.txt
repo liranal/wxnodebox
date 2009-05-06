@@ -1,0 +1,13 @@
+﻿Double-click path window to access browsing bookmarks list.
+Visit http://atol.sourceforge.net for latest news and updates.
+Press <Alt>+Q to start Quick Search mode in the current panel (press Esc to exit the mode).
+You are welcome to suggest any feature that you think it is needed in the program.
+To add your tips here, just edit tips.txt file. Feel free to send us your best tips.
+Use <F5> to copy (or <F6> to move) selected files into another panel.
+Press <F2> key to refresh current file panel.
+Use <Ctrl>+P to copy current panel path into the command line window.
+Press <Ctrl>+<Home> to set panel path to the root directory.
+Press <Ctrl>+<PgUp> to set panel path to the parent directory.
+You can compare file lists in panels by using <Shift>+F2.
+Press <Space> to calculate size of focused directory.
+You can open new command prompt (shell, terminal) window using <Ctrl>+<F3> shortcut key.

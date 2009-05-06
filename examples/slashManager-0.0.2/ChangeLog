@@ -1,0 +1,29 @@
+2004-07-31 Piotr Luszczek
+	
+	* Version 0.0.2 released.
+	
+2004-07-29 Piotr Luszczek
+
+	* Added command line arguments: they now open as many tabs as necessary
+	* Added sort case-insensitive to tab popup menu
+	
+2004-07-27 Piotr Luszczek
+	
+	* Added "move/copy to" menu item to the popup
+	
+2004-07-22 Piotr Luszczek
+	
+	* Added link/folder icon
+	* Added ugly program icon
+	
+2004-02-22 Piotr Luszczek
+	
+	* Added .mpa to recognized file extensions
+	
+2004-02-19 Piotr Luszczek
+	
+	* Changed title and added application name (helps with X's WM_CLASS)
+	
+2004-02-10 Piotr Luszczek
+	
+	* Version 0.0.1 released.
